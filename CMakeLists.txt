@@ -22,16 +22,16 @@ if(NOT SOURCES)
 endif()
 
 # Add the executable for your project
-add_executable(MinecraftClone ${SOURCES})
+add_executable(chip8-emulator ${SOURCES})
 
 # Include directories for your header files (e.g., src/ and external libs)
-target_include_directories(MinecraftClone PRIVATE ${OPENGL_INCLUDE_DIRS} ${GLUT_INCLUDE_DIRS})
+target_include_directories(chip8-emulator PRIVATE ${OPENGL_INCLUDE_DIRS} ${GLUT_INCLUDE_DIRS})
 
 # Link the libraries
-target_link_libraries(MinecraftClone PRIVATE OpenGL::GL GLUT::GLUT)
+target_link_libraries(chip8-emulator PRIVATE OpenGL::GL GLUT::GLUT)
 
 # Add compiler warnings (optional)
 if (CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-    target_compile_options(MinecraftClone PRIVATE -Wall -Wextra -Wpedantic)
+    target_compile_options(chip8-emulator PRIVATE -Wall -Wextra -Wpedantic)
 endif()
 
