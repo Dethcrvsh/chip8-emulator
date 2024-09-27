@@ -23,6 +23,7 @@ void init(void (*callback)(int), void (*display)(),
     // Set the display callback
     glutDisplayFunc(display);
 
+    // Set keyboard callbacks
     glutKeyboardFunc(key_press);
     glutKeyboardUpFunc(key_release);
 
@@ -37,8 +38,8 @@ void draw_square(int const x, int const y) {
     double const x_orig{2.0f / DISPLAY_WIDTH};
     double const y_orig{2.0f / DISPLAY_HEIGHT};
 
-    double const x_offset(2 * x / static_cast<double>(DISPLAY_WIDTH));
-    double const y_offset(2 * y / static_cast<double>(DISPLAY_HEIGHT));
+    double const x_offset(2.0f * x / DISPLAY_WIDTH);
+    double const y_offset(2.0f * y / DISPLAY_HEIGHT);
 
     glBegin(GL_QUADS);
     glVertex2f(-1.0f + x_offset, -1.0f + y_offset); // Bottom-left corner
