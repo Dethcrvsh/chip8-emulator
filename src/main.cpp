@@ -1,22 +1,26 @@
 #include "chip8.h"
 #include "graphics.h"
+#include "opcode_tester.h"
 #include <GL/freeglut_std.h>
 #include <chrono>
 #include <cmath>
 #include <cstring>
-#include <iostream>
 
-CHIP8 chip8{};
+CHIP8 chip8{};;
 
 void on_press(unsigned const char key, int, int) {
-    if (chip8.keymap.find(key) != chip8.keymap.end()) {
-        chip8.keystates[chip8.keymap.at(key)] = true;
+    if (chip8.KEYMAP.find(key) != chip8.KEYMAP.end()) {
+        uint16_t const current_key = chip8.KEYMAP.at(key);
+        // Set the corresponding bit for the key
+        chip8.keystates |= (0x001) << current_key;
     }
 }
 
 void on_release(unsigned const char key, int, int) {
-    if (chip8.keymap.find(key) != chip8.keymap.end()) {
-        chip8.keystates[chip8.keymap.at(key)] = false;
+    if (chip8.KEYMAP.find(key) != chip8.KEYMAP.end()) {
+        uint16_t const current_key = chip8.KEYMAP.at(key);
+        // Set the corresponding bit for the key
+        chip8.keystates &= ~((0x001) << current_key);
     }
 }
 
@@ -38,10 +42,10 @@ void loop(int) {
 void display() {
     glClear(GL_COLOR_BUFFER_BIT);
 
-    for (int y = 0; y < 32; y++) {
-        for (int x = 0; x < 64; x++) {
+    for (int y = 0; y < chip8.DISPLAY_HEIGHT; y++) {
+        for (int x = 0; x < chip8.DISPLAY_WIDTH; x++) {
             if (chip8.display[y][x]) {
-                graphics::draw_square(x, y);
+                graphics::draw_square(x, chip8.DISPLAY_HEIGHT - y - 1);
             }
         }
     }
@@ -51,7 +55,14 @@ void display() {
 }
 
 int main(int argc, char **argv) {
-    graphics::init(loop, display, on_press, on_release, argc, argv);
+    // Run the test module
+    if (argc > 1 && std::string(argv[1]) == "--opcode-test") {
+        OPCodeTester tester {};
+        tester.run(chip8);
+    } else {
+        graphics::init(loop, display, on_press, on_release, argc, argv);
+    }
 
     return 0;
 }
+

@@ -15,7 +15,7 @@ void init(void (*callback)(int), void (*display)(),
     glutInitDisplayMode(GLUT_SINGLE | GLUT_RGB);
 
     // Set window size
-    glutInitWindowSize(1000, 500);
+    glutInitWindowSize(640, 480);
 
     // Create a window
     glutCreateWindow("CHIP8 Emulator");

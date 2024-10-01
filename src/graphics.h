@@ -2,6 +2,9 @@
 #include <GL/gl.h>
 #include <GL/glut.h>
 
+#pragma once
+
+
 namespace graphics {
 
 int const DISPLAY_WIDTH{64};

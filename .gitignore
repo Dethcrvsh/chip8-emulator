@@ -5,3 +5,4 @@ CMakeCache.txt
 compile_commands.json
 Makefile
 chip8-emulator
+roms/

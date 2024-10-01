@@ -1,53 +1,72 @@
 #include "chip8.h"
-#include "graphics.h"
 #include <GL/freeglut_std.h>
 #include <GL/gl.h>
 #include <algorithm>
 #include <cmath>
-#include <cstddef>
 #include <fstream>
 #include <iostream>
 #include <limits>
 #include <random>
+#include <cstring>
+
+
+std::unordered_map<char, int> const CHIP8::KEYMAP {
+    {'1', 0x1},
+    {'2', 0x2},
+    {'3', 0x3},
+    {'4', 0xC},
+    {'Q', 0x4},
+    {'W', 0x5},
+    {'E', 0x6},
+    {'R', 0xD},
+    {'A', 0x7},
+    {'S', 0x8},
+    {'D', 0x9},
+    {'F', 0xE},
+    {'Z', 0xA},
+    {'X', 0x0},
+    {'C', 0xB},
+    {'V', 0xF},
+};
 
 CHIP8::CHIP8() {
     // Initialize the font
-    std::byte font[5 * 16]{
-        to_byte(0xF0), to_byte(0x90), to_byte(0x90),
-        to_byte(0x90), to_byte(0xF0), // 0
-        to_byte(0x20), to_byte(0x60), to_byte(0x20),
-        to_byte(0x20), to_byte(0x70), // 1
-        to_byte(0xF0), to_byte(0x10), to_byte(0xF0),
-        to_byte(0x80), to_byte(0xF0), // 2
-        to_byte(0xF0), to_byte(0x10), to_byte(0xF0),
-        to_byte(0x10), to_byte(0xF0), // 3
-        to_byte(0x90), to_byte(0x90), to_byte(0xF0),
-        to_byte(0x10), to_byte(0x10), // 4
-        to_byte(0xF0), to_byte(0x80), to_byte(0xF0),
-        to_byte(0x10), to_byte(0xF0), // 5
-        to_byte(0xF0), to_byte(0x80), to_byte(0xF0),
-        to_byte(0x90), to_byte(0xF0), // 6
-        to_byte(0xF0), to_byte(0x10), to_byte(0x20),
-        to_byte(0x40), to_byte(0x40), // 7
-        to_byte(0xF0), to_byte(0x90), to_byte(0xF0),
-        to_byte(0x90), to_byte(0xF0), // 8
-        to_byte(0xF0), to_byte(0x90), to_byte(0xF0),
-        to_byte(0x10), to_byte(0xF0), // 9
-        to_byte(0xF0), to_byte(0x90), to_byte(0xF0),
-        to_byte(0x90), to_byte(0x90), // A
-        to_byte(0xE0), to_byte(0x90), to_byte(0xE0),
-        to_byte(0x90), to_byte(0xE0), // B
-        to_byte(0xF0), to_byte(0x80), to_byte(0x80),
-        to_byte(0x80), to_byte(0xF0), // C
-        to_byte(0xE0), to_byte(0x90), to_byte(0x90),
-        to_byte(0x90), to_byte(0xE0), // D
-        to_byte(0xF0), to_byte(0x80), to_byte(0xF0),
-        to_byte(0x80), to_byte(0xF0), // E
-        to_byte(0xF0), to_byte(0x80), to_byte(0xF0),
-        to_byte(0x80), to_byte(0x80) // F
+    uint8_t font[5 * 16]{
+        0xF0, 0x90, 0x90,
+        0x90, 0xF0, // 0
+        0x20, 0x60, 0x20,
+        0x20, 0x70, // 1
+        0xF0, 0x10, 0xF0,
+        0x80, 0xF0, // 2
+        0xF0, 0x10, 0xF0,
+        0x10, 0xF0, // 3
+        0x90, 0x90, 0xF0,
+        0x10, 0x10, // 4
+        0xF0, 0x80, 0xF0,
+        0x10, 0xF0, // 5
+        0xF0, 0x80, 0xF0,
+        0x90, 0xF0, // 6
+        0xF0, 0x10, 0x20,
+        0x40, 0x40, // 7
+        0xF0, 0x90, 0xF0,
+        0x90, 0xF0, // 8
+        0xF0, 0x90, 0xF0,
+        0x10, 0xF0, // 9
+        0xF0, 0x90, 0xF0,
+        0x90, 0x90, // A
+        0xE0, 0x90, 0xE0,
+        0x90, 0xE0, // B
+        0xF0, 0x80, 0x80,
+        0x80, 0xF0, // C
+        0xE0, 0x90, 0x90,
+        0x90, 0xE0, // D
+        0xF0, 0x80, 0xF0,
+        0x80, 0xF0, // E
+        0xF0, 0x80, 0xF0,
+        0x80, 0x80 // F
     };
     std::copy(std::begin(font), std::end(font), &(memory[0x50]));
-    run_rom("roms/ibm-logo.ch8");
+    run_rom("roms/flags.ch8");
 }
 
 void CHIP8::run_rom(std::string const path) {
@@ -64,13 +83,18 @@ void CHIP8::run_rom(std::string const path) {
     pc = 0x200;
 }
 
-void CHIP8::cycle() {
+void CHIP8::cycle(bool const force) {
+    if (is_paused && !force) {
+        return;
+    }
+
     // Tick down the timers at 60Hz
     accum_time += 60.0 / REFRESH_RATE;
     double tick;
     modf(accum_time, &tick);
     timer_tick(tick);
     accum_time -= tick;
+
 
     uint16_t const op{fetch()};
 
@@ -85,7 +109,11 @@ void CHIP8::cycle() {
             switch (op) {
                 // Clear the screen
                 case 0x00E0:
-                    glClear(GL_COLOR_BUFFER_BIT);
+                    std::fill(
+                        &display[0][0],
+                        &display[0][0] + DISPLAY_WIDTH * DISPLAY_HEIGHT,
+                        false 
+                    );
                     break;
 
                 // Return from subroutine
@@ -102,10 +130,12 @@ void CHIP8::cycle() {
             break;
 
 
-        // NOTE: Ambiguous
-        // TODO: Figure it out
-        // Jump with offset
         case 0xB000:
+            if (USE_LEGACY_JUMP) {
+                pc = registers[0x0] + NNN;
+            } else {
+                pc = registers[X] + NNN;
+            }
             break;
 
         // Call Subroutine
@@ -198,53 +228,147 @@ void CHIP8::cycle() {
                     break;
 
                 // Subtract X-Y
-                case 0x0005:
-                    // If X is bigger than Y, underflow occurs
-                    registers[0xF] = registers[X] > registers[Y];
+                case 0x0005: {
+                    bool const carry {registers[Y] > registers[X]};
                     registers[X] = registers[X] - registers[Y];
+                    registers[0xF] = !carry;
                     break;
+                }
 
                 // Subtract Y-X
-                case 0x0007:
-                    // If Y is bigger than X, underflow occurs
-                    registers[0xF] = registers[Y] > registers[X];
+                case 0x0007: {
+                    bool const carry {registers[X] > registers[Y]};
                     registers[X] = registers[Y] - registers[X];
+                    registers[0xF] = !carry;
                     break;
+                }
 
-                // NOTE: Ambiguous
                 // Shift Right
                 case 0x0006:
-                    if (true /* Put something here */) {
+                    if (USE_LEGACY_SHIFT) {
                         registers[X] = registers[Y];
                     }
-                    registers[0xF] = registers[X] & 0x0001;
-                    registers[X] = registers[X] >> 1;
+                    registers[0xF] = registers[X] & 0x01;
+                    registers[X] >>= 0x1;
                     break;
 
-                // NOTE: Ambiguous
-                // Shift Right
+                // Shift Left
                 case 0x000E:
-                    if (true /* Put something here */) {
+                    if (USE_LEGACY_SHIFT) {
                         registers[X] = registers[Y];
                     }
-                    registers[0xF] = (registers[X] & 0x8000) >> 15;
-                    registers[X] = registers[X] << 1;
+                    registers[0xF] = (registers[X] & 0x80) >> 7;
+                    registers[X] <<= 0x1; 
                     break;
             }
-
             break;
         }
+
+        // Key presses
+        case 0XE000:
+            switch(NN) {
+                // Skip if key in X is pressed
+                case 0x009E:
+                    pc += 2 * ((keystates & (0x1 << registers[X])) != 0);
+                    break;
+
+                // Skip if key in X is not pressed
+                case 0x00A1:
+                    pc += 2 * ((keystates & (0x1 << registers[X])) == 0);
+                    break;
+            }
+            break;
+
+        // Timers
+        case 0xF000:
+            switch(NN) {
+                // Set X to Delay Timer
+                case 0x0007:
+                    registers[X] = delay_timer;
+                    break;
+
+                // Set the Delay Timer to X
+                case 0x0015:
+                    delay_timer = registers[X];
+                    break;
+
+                // Set the Sound Timer to X
+                case 0x0018:
+                    sound_timer = registers[X];
+                    break;
+
+                // Add X to Index
+                case 0x001E:
+                    I += registers[X];
+
+                    if (USE_LEGACY_INDEX_ADD)
+                        // Set overflow flag
+                        registers[0xF] = I < registers[X];
+                    break;
+
+                // Get key (block until a key is pressed)
+                case 0x000A:
+                    if (keystates) {
+                        // Set X to the first key pressed that is found
+                        for (int i {}; i < 16; i++) {
+                            if (keystates & (0x1 << i)) {
+                                registers[X] = i;
+                                break;
+                            }
+                        }
+
+                    } else {
+                        pc -= 2;
+                    }
+                    break;
+
+                // Font character
+                case 0x0029:
+                    I = 0x0050 + 5 * registers[X]; 
+                    break;
+                    
+                // Binary coded decimal conversion
+                case 0x0033: {
+                    uint8_t const num {registers[X]};
+                    memory[I] = num / 100;
+                    memory[I+1] = (num % 100) / 10;
+                    memory[I+2] = num % 10;
+                    break;
+                }
+
+                // Store memory
+                case 0x0055:
+                    std::memcpy(memory + I, registers, X + 1);
+
+                    if (USE_LEGACY_LOAD_STORE) {
+                        I += registers[X] + 1;
+                    }
+                    break;
+
+                // Load memory
+                case 0x0065:
+                    std::memcpy(registers, memory + I, X + 1);
+
+                    if (USE_LEGACY_LOAD_STORE) {
+                        I += registers[X] + 1;
+                    }
+                    break;
+            }
     }
 }
 
 uint16_t CHIP8::fetch() {
     pc += 2;
-    return (static_cast<uint16_t>(static_cast<uint8_t>(memory[pc - 2]) << 8) |
-    static_cast<uint16_t>(static_cast<uint8_t>(memory[pc - 1])));
+    return (static_cast<uint16_t>(memory[pc - 2] << 8) |
+    static_cast<uint16_t>(memory[pc - 1]));
 }
 
-std::byte CHIP8::to_byte(int const value) {
-    return static_cast<std::byte>(value);
+void CHIP8::pause() {
+    is_paused = true;
+}
+
+void CHIP8::resume() {
+    is_paused = false;
 }
 
 void CHIP8::draw(uint16_t const X, uint16_t const Y, uint16_t const N) {
@@ -253,22 +377,23 @@ void CHIP8::draw(uint16_t const X, uint16_t const Y, uint16_t const N) {
     registers[0xF] = false;
 
     for (int i{0}; i < N; i++) {
-        std::byte pixels{memory[I + i]};
+        uint8_t pixels{memory[I+i]};
 
         for (int j{0}; j < 8; j++) {
-            bool *pixel{&display[y_reg - i + 16][x_reg + 8 - j]};
-            // eww
-            uint8_t const new_pixel{static_cast<uint8_t>(static_cast<uint8_t>(pixels) & 0x01)};
+            int const pixel_x {x_reg + j};
+            int const pixel_y {y_reg + i};
 
-            // TODO: what is happening here
-            
-            // XOR the current pixel with the last bit of the sprite
-            registers[0xF] |= *pixel && new_pixel;
-            *pixel = *pixel != new_pixel;
+            // Skip if drawing outside the display
+            if (pixel_x >= DISPLAY_WIDTH || pixel_y >= DISPLAY_HEIGHT) {
+                continue;
+            }
 
-            registers[0xF] = *pixel && new_pixel;
+            bool &pixel = display[pixel_y][pixel_x];
+            // Extract the corresponding pixel
+            bool new_pixel = (pixels >> (7-j)) & 0x01;
 
-            pixels = pixels >> 1;
+            registers[0xF] |= pixel && new_pixel;
+            pixel ^= new_pixel;
         }
     }
 }
