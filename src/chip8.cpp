@@ -15,17 +15,29 @@ std::unordered_map<char, int> const CHIP8::KEYMAP {
     {'2', 0x2},
     {'3', 0x3},
     {'4', 0xC},
+    {'q', 0x4},
     {'Q', 0x4},
+    {'w', 0x5},
     {'W', 0x5},
+    {'e', 0x6},
     {'E', 0x6},
+    {'r', 0xD},
     {'R', 0xD},
+    {'a', 0x7},
     {'A', 0x7},
+    {'s', 0x8},
     {'S', 0x8},
+    {'d', 0x9},
     {'D', 0x9},
+    {'f', 0xE},
     {'F', 0xE},
+    {'z', 0xA},
     {'Z', 0xA},
+    {'x', 0x0},
     {'X', 0x0},
+    {'c', 0xB},
     {'C', 0xB},
+    {'v', 0xF},
     {'V', 0xF},
 };
 
@@ -66,7 +78,7 @@ CHIP8::CHIP8() {
         0x80, 0x80 // F
     };
     std::copy(std::begin(font), std::end(font), &(memory[0x50]));
-    run_rom("roms/flags.ch8");
+    run_rom("roms/6-keypad.ch8");
 }
 
 void CHIP8::run_rom(std::string const path) {
@@ -208,16 +220,19 @@ void CHIP8::cycle(bool const force) {
                 // Binary OR
                 case 0x0001:
                     registers[X] = registers[X] | registers[Y];
+                    registers[0xF] = 0;
                     break;
 
                 // Binary AND
                 case 0x0002:
                     registers[X] = registers[X] & registers[Y];
+                    registers[0xF] = 0;
                     break;
 
                 // Logical XOR
                 case 0x0003:
                     registers[X] = registers[X] ^ registers[Y];
+                    registers[0xF] = 0;
                     break;
 
                 // Add
@@ -244,21 +259,27 @@ void CHIP8::cycle(bool const force) {
                 }
 
                 // Shift Right
-                case 0x0006:
+                case 0x0006: {
                     if (USE_LEGACY_SHIFT) {
                         registers[X] = registers[Y];
                     }
-                    registers[0xF] = registers[X] & 0x01;
+                    // fuck brace initialization, I know this cast is fine
+                    // I don't need to tell you that im not stupid, compiler
+                    uint8_t const carry = registers[X] & 0x01;
                     registers[X] >>= 0x1;
+                    registers[0xF] = carry;
                     break;
+                }
 
                 // Shift Left
                 case 0x000E:
                     if (USE_LEGACY_SHIFT) {
                         registers[X] = registers[Y];
                     }
-                    registers[0xF] = (registers[X] & 0x80) >> 7;
+                    // looking at you g++
+                    uint8_t const carry = (registers[X] & 0x80) >> 7;
                     registers[X] <<= 0x1; 
+                    registers[0xF] = carry;
                     break;
             }
             break;
@@ -341,7 +362,7 @@ void CHIP8::cycle(bool const force) {
                     std::memcpy(memory + I, registers, X + 1);
 
                     if (USE_LEGACY_LOAD_STORE) {
-                        I += registers[X] + 1;
+                        I += X + 1;
                     }
                     break;
 
@@ -350,7 +371,7 @@ void CHIP8::cycle(bool const force) {
                     std::memcpy(registers, memory + I, X + 1);
 
                     if (USE_LEGACY_LOAD_STORE) {
-                        I += registers[X] + 1;
+                        I += X + 1;
                     }
                     break;
             }
@@ -402,3 +423,4 @@ void CHIP8::timer_tick(int const t) {
     delay_timer = std::max(0, delay_timer - t);
     sound_timer = std::max(0, sound_timer - t);
 };
+

@@ -20,7 +20,7 @@ public:
     // Legacy sets PC to NNN + V0, otherwise NNN + VX
     bool USE_LEGACY_JUMP{true};
     // Legacy first sets VX = VY
-    bool USE_LEGACY_SHIFT{false};
+    bool USE_LEGACY_SHIFT{true};
     // Legacy does not affect the VF flag
     bool USE_LEGACY_INDEX_ADD{false};
     // Legacy increments the I register
@@ -29,6 +29,7 @@ public:
     friend struct OPCodeTester;
 
     bool display[DISPLAY_HEIGHT][DISPLAY_WIDTH];
+    bool display_buffer[DISPLAY_HEIGHT][DISPLAY_WIDTH];
     // Do NOT touch this or the race will condition you
     uint16_t keystates {};
 
@@ -52,7 +53,7 @@ private:
     uint16_t pc {};
     uint16_t I {};
     std::stack<uint16_t> stack {};
-    uint8_t delay_timer {static_cast<uint8_t>(127)};
+    uint8_t delay_timer {};
     uint8_t sound_timer {};
     uint8_t registers[16];
 
