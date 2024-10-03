@@ -1,4 +1,5 @@
 #include "graphics.h"
+#include "colors.h"
 #include <GL/freeglut_std.h>
 #include <GL/gl.h>
 #include <GL/glut.h>
@@ -8,17 +9,17 @@ namespace graphics {
 void init(void (*callback)(int), void (*display)(),
           void (*key_press)(unsigned char, int, int),
           void (*key_release)(unsigned char, int, int), int argc, char **argv) {
-    // Initialize GLUT
     glutInit(&argc, argv);
 
     // Set display mode (single buffer and RGB color)
     glutInitDisplayMode(GLUT_SINGLE | GLUT_RGB);
 
     // Set window size
-    glutInitWindowSize(640, 480);
+    glutInitWindowSize(1000, 500);
 
     // Create a window
     glutCreateWindow("CHIP8 Emulator");
+    glClearColor(Colors::BG.r, Colors::BG.g, Colors::BG.b, 1.0);
 
     // Set the display callback
     glutDisplayFunc(display);

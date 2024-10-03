@@ -14,7 +14,7 @@ public:
     static int const DISPLAY_WIDTH{64};
     static int const DISPLAY_HEIGHT{32};
     static int const SPRITE_WIDTH{8};
-    static int constexpr REFRESH_RATE {700};
+    static int constexpr REFRESH_RATE {500};
     static std::unordered_map<char, int> const KEYMAP;
 
     // Legacy sets PC to NNN + V0, otherwise NNN + VX
@@ -41,7 +41,7 @@ public:
     CHIP8(CHIP8&& other) noexcept = default;
     CHIP8& operator=(CHIP8&& other) noexcept = default;
 
-    void run_rom(std::string const path);
+    void run_rom(std::string const& path);
     void cycle(bool const force = false);
     uint16_t fetch();
 
@@ -53,7 +53,7 @@ private:
     uint16_t pc {};
     uint16_t I {};
     std::stack<uint16_t> stack {};
-    uint8_t delay_timer {};
+    uint8_t delay_timer {60};
     uint8_t sound_timer {};
     uint8_t registers[16];
 

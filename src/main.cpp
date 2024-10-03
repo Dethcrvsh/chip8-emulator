@@ -1,10 +1,12 @@
 #include "chip8.h"
 #include "graphics.h"
 #include "opcode_tester.h"
+#include "colors.h"
 #include <GL/freeglut_std.h>
 #include <chrono>
 #include <cmath>
 #include <cstring>
+#include <algorithm>
 
 CHIP8 chip8{};;
 
@@ -28,6 +30,7 @@ void loop(int) {
     auto const start{std::chrono::high_resolution_clock::now()};
 
     chip8.cycle();
+
     glutPostRedisplay();
 
     auto const end{std::chrono::high_resolution_clock::now()};
@@ -36,11 +39,12 @@ void loop(int) {
         std::chrono::duration_cast<std::chrono::milliseconds>(end - start)
         .count();
 
-    glutTimerFunc((1000.0 - elapsed) / CHIP8::REFRESH_RATE, loop, 0);
+    glutTimerFunc(std::max((1000.0-elapsed) / CHIP8::REFRESH_RATE, 0.0), loop, 0);
 }
 
-void display() {
+void draw() {
     glClear(GL_COLOR_BUFFER_BIT);
+    glColor3f(Colors::FG.r, Colors::FG.g, Colors::FG.b);
 
     for (int y = 0; y < chip8.DISPLAY_HEIGHT; y++) {
         for (int x = 0; x < chip8.DISPLAY_WIDTH; x++) {
@@ -55,12 +59,17 @@ void display() {
 }
 
 int main(int argc, char **argv) {
+    if (argc <= 1) {
+        return 0;
+    }
+
     // Run the test module
-    if (argc > 1 && std::string(argv[1]) == "--opcode-test") {
+    if (std::string(argv[1]) == "--opcode-test") {
         OPCodeTester tester {};
         tester.run(chip8);
     } else {
-        graphics::init(loop, display, on_press, on_release, argc, argv);
+        chip8.run_rom(argv[1]);
+        graphics::init(loop, draw, on_press, on_release, argc, argv);
     }
 
     return 0;

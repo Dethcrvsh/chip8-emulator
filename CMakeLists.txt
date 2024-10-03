@@ -9,9 +9,9 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-# Find and link required libraries
+# Find OpenGL and GLFW
 find_package(OpenGL REQUIRED)
-find_package(GLUT REQUIRED)
+find_package(GLUT REQUIRED) 
 
 # Add source files
 file(GLOB_RECURSE SOURCES "${CMAKE_SOURCE_DIR}/src/*.cpp")
@@ -25,7 +25,7 @@ endif()
 add_executable(chip8-emulator ${SOURCES})
 
 # Include directories for your header files (e.g., src/ and external libs)
-target_include_directories(chip8-emulator PRIVATE ${OPENGL_INCLUDE_DIRS} ${GLUT_INCLUDE_DIRS})
+target_include_directories(chip8-emulator PRIVATE ${OPENGL_INCLUDE_DIRS} ${GLFW_INCLUDE_DIRS})
 
 # Link the libraries
 target_link_libraries(chip8-emulator PRIVATE OpenGL::GL GLUT::GLUT)

@@ -24,7 +24,6 @@
     } while (0)
 
 
-
 struct OPCodeTester {
     struct ANSI {
         static inline std::string const BOLD {"\033[1m"};

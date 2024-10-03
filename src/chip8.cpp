@@ -78,10 +78,9 @@ CHIP8::CHIP8() {
         0x80, 0x80 // F
     };
     std::copy(std::begin(font), std::end(font), &(memory[0x50]));
-    run_rom("roms/6-keypad.ch8");
 }
 
-void CHIP8::run_rom(std::string const path) {
+void CHIP8::run_rom(std::string const& path) {
     std::ifstream ifs(path, std::ios::binary);
 
     if (!ifs.is_open()) {
@@ -105,8 +104,17 @@ void CHIP8::cycle(bool const force) {
     double tick;
     modf(accum_time, &tick);
     timer_tick(tick);
-    accum_time -= tick;
 
+    if (tick >= 1) {
+        // Copy the contents of the buffer into the display
+        std::copy(
+            &display_buffer[0][0],
+            &display_buffer[0][0] + DISPLAY_WIDTH * DISPLAY_HEIGHT,
+            &display[0][0]
+        );
+    }
+
+    accum_time -= tick;
 
     uint16_t const op{fetch()};
 
@@ -122,8 +130,8 @@ void CHIP8::cycle(bool const force) {
                 // Clear the screen
                 case 0x00E0:
                     std::fill(
-                        &display[0][0],
-                        &display[0][0] + DISPLAY_WIDTH * DISPLAY_HEIGHT,
+                        &display_buffer[0][0],
+                        &display_buffer[0][0] + DISPLAY_WIDTH * DISPLAY_HEIGHT,
                         false 
                     );
                     break;
@@ -140,7 +148,6 @@ void CHIP8::cycle(bool const force) {
         case 0x1000:
             pc = NNN;
             break;
-
 
         case 0xB000:
             if (USE_LEGACY_JUMP) {
@@ -360,19 +367,13 @@ void CHIP8::cycle(bool const force) {
                 // Store memory
                 case 0x0055:
                     std::memcpy(memory + I, registers, X + 1);
-
-                    if (USE_LEGACY_LOAD_STORE) {
-                        I += X + 1;
-                    }
+                    I += (X + 1) * USE_LEGACY_LOAD_STORE;
                     break;
 
                 // Load memory
                 case 0x0065:
                     std::memcpy(registers, memory + I, X + 1);
-
-                    if (USE_LEGACY_LOAD_STORE) {
-                        I += X + 1;
-                    }
+                    I += (X + 1) * USE_LEGACY_LOAD_STORE;
                     break;
             }
     }
@@ -409,7 +410,7 @@ void CHIP8::draw(uint16_t const X, uint16_t const Y, uint16_t const N) {
                 continue;
             }
 
-            bool &pixel = display[pixel_y][pixel_x];
+            bool &pixel = display_buffer[pixel_y][pixel_x];
             // Extract the corresponding pixel
             bool new_pixel = (pixels >> (7-j)) & 0x01;
 
