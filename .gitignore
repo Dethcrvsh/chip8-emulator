@@ -1,8 +1,5 @@
-CMakeFiles/
-.cache/
-cmake_install.cmake
-CMakeCache.txt
 compile_commands.json
-Makefile
-chip8-emulator
+build/
+build-web/
+.cache/
 roms/

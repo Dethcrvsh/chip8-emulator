@@ -4,9 +4,15 @@
 #include <GL/gl.h>
 #include <GL/glut.h>
 
+#ifdef __EMSCRIPTEN__
+#include <emscripten.h>
+#include "chip8.h"
+#endif
+
+
 namespace graphics {
 
-void init(void (*callback)(int), void (*display)(),
+void init(void (*callback)(), void (*display)(),
           void (*key_press)(unsigned char, int, int),
           void (*key_release)(unsigned char, int, int), int argc, char **argv) {
     glutInit(&argc, argv);
@@ -28,7 +34,7 @@ void init(void (*callback)(int), void (*display)(),
     glutKeyboardFunc(key_press);
     glutKeyboardUpFunc(key_release);
 
-    glutTimerFunc(0, callback, 0);
+    glutIdleFunc(callback);
 
     // Enter the GLUT main loop
     glutMainLoop();

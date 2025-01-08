@@ -8,6 +8,7 @@
 #include <limits>
 #include <random>
 #include <cstring>
+#include <sstream>
 
 
 std::unordered_map<char, int> const CHIP8::KEYMAP {
@@ -89,7 +90,9 @@ void CHIP8::run_rom(std::string const& path) {
     }
 
     // Start reading into RAM at adress 0x200
+    // ifs.read(reinterpret_cast<char *>(&memory[0x200]), 4096);
     ifs.read(reinterpret_cast<char *>(&memory[0x200]), 4096);
+
     // Start the program
     pc = 0x200;
 }
@@ -105,6 +108,7 @@ void CHIP8::cycle(bool const force) {
     modf(accum_time, &tick);
     timer_tick(tick);
 
+    do_redraw = false;
     if (tick >= 1) {
         // Copy the contents of the buffer into the display
         std::copy(
@@ -112,6 +116,7 @@ void CHIP8::cycle(bool const force) {
             &display_buffer[0][0] + DISPLAY_WIDTH * DISPLAY_HEIGHT,
             &display[0][0]
         );
+        do_redraw = true;
     }
 
     accum_time -= tick;

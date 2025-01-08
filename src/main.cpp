@@ -6,7 +6,7 @@
 #include <chrono>
 #include <cmath>
 #include <cstring>
-#include <algorithm>
+#include <iostream>
 
 CHIP8 chip8{};;
 
@@ -26,20 +26,27 @@ void on_release(unsigned const char key, int, int) {
     }
 }
 
-void loop(int) {
-    auto const start{std::chrono::high_resolution_clock::now()};
+void loop() {
+    static auto last_frame_time = std::chrono::high_resolution_clock::now();
+    static double accum {};
 
-    chip8.cycle();
+    auto now = std::chrono::high_resolution_clock::now();
+    double const elapsed = std::chrono::duration_cast<std::chrono::microseconds>(now - last_frame_time).count();
+    last_frame_time = now;
+
+    double const target_frame_time {1000000.0 / CHIP8::REFRESH_RATE};
+
+    accum += elapsed;
+
+    while (accum >= target_frame_time) {
+        accum -= target_frame_time;
+        chip8.cycle();
+        if (chip8.do_redraw) {
+            glutPostRedisplay();
+        }
+    }
 
     glutPostRedisplay();
-
-    auto const end{std::chrono::high_resolution_clock::now()};
-
-    double const elapsed =
-        std::chrono::duration_cast<std::chrono::milliseconds>(end - start)
-        .count();
-
-    glutTimerFunc(std::max((1000.0-elapsed) / CHIP8::REFRESH_RATE, 0.0), loop, 0);
 }
 
 void draw() {
@@ -60,7 +67,8 @@ void draw() {
 
 int main(int argc, char **argv) {
     if (argc <= 1) {
-        return 0;
+        chip8.run_rom("");
+        graphics::init(loop, draw, on_press, on_release, argc, argv);
     }
 
     // Run the test module

@@ -14,7 +14,7 @@ public:
     static int const DISPLAY_WIDTH{64};
     static int const DISPLAY_HEIGHT{32};
     static int const SPRITE_WIDTH{8};
-    static int constexpr REFRESH_RATE {500};
+    static int constexpr REFRESH_RATE {400};
     static std::unordered_map<char, int> const KEYMAP;
 
     // Legacy sets PC to NNN + V0, otherwise NNN + VX
@@ -28,6 +28,7 @@ public:
 
     friend struct OPCodeTester;
 
+    bool do_redraw {false};
     bool display[DISPLAY_HEIGHT][DISPLAY_WIDTH];
     bool display_buffer[DISPLAY_HEIGHT][DISPLAY_WIDTH];
     // Do NOT touch this or the race will condition you
